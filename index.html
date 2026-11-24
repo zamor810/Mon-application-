@@ -1,1 +1,248 @@
 
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CashLife - Gérez votre budget au quotidien</title>
+    <meta name="description" content="Gérez votre budget intelligemment chaque jour avec CashLife">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="CashLife">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- En-tête et actions rapides -->
+        <header class="app-header">
+            <div class="brand-block">
+                <div class="brand-icon" aria-hidden="true">💼</div>
+                <div>
+                    <h1>CashLife</h1>
+                    <p class="subtitle">Gérez votre budget intelligemment chaque jour</p>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <label class="currency-control">
+                    <span>Devise :</span>
+                    <select id="currency-select" aria-label="Choisir la devise">
+                        <option value="HTG" selected>HTG (Gourde)</option>
+                        <option value="USD">USD ($)</option>
+                    </select>
+                </label>
+
+                <button type="button" id="export-csv-btn" class="btn-outline-green">
+                    ⬇ Exporter CSV
+                </button>
+
+                <button type="button" id="clear-all-btn" class="btn-outline-danger">
+                    🗑 Tout effacer
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <!-- Cartes de synthèse financière -->
+            <section class="summary-grid" aria-label="Résumé financier">
+                <article class="summary-card balance-card">
+                    <div class="card-top">
+                        <h3>Solde / Épargne restante</h3>
+                        <span class="card-badge" aria-hidden="true">🐷</span>
+                    </div>
+                    <p id="solde-total" class="card-amount">0.00 HTG</p>
+                    <p id="savings-rate" class="card-meta">Taux d'épargne : 0% sur vos revenus</p>
+                </article>
+
+                <article class="summary-card income-card">
+                    <div class="card-top">
+                        <h3>Total Revenus (Entrées)</h3>
+                        <span class="card-badge income-badge" aria-hidden="true">↗</span>
+                    </div>
+                    <p id="total-revenus" class="card-amount">0.00 HTG</p>
+                    <p id="income-count" class="card-meta">0 transaction revenu</p>
+                </article>
+
+                <article class="summary-card expense-card">
+                    <div class="card-top">
+                        <h3>Total Dépenses (Sorties)</h3>
+                        <span class="card-badge expense-badge" aria-hidden="true">↘</span>
+                    </div>
+                    <p id="total-depenses" class="card-amount">0.00 HTG</p>
+                    <p id="expense-count" class="card-meta">0 transaction dépense</p>
+                </article>
+            </section>
+
+            <!-- Formulaire d'ajout de transaction -->
+            <section class="panel form-panel" aria-labelledby="form-title">
+                <div class="panel-header">
+                    <span class="panel-icon" aria-hidden="true">+</span>
+                    <div>
+                        <h2 id="form-title">Ajouter une Transaction</h2>
+                        <p class="panel-subtitle">Enregistrez un revenu ou une dépense du jour</p>
+                    </div>
+                </div>
+
+                <form id="transaction-form">
+                    <div class="field-group">
+                        <label>Type de Transaction</label>
+                        <div class="type-toggle-group" role="group" aria-label="Type de transaction">
+                            <button type="button" class="type-btn active expense-type" data-type="depense">
+                                ↗ Dépense (-)
+                            </button>
+                            <button type="button" class="type-btn income-type" data-type="revenu">
+                                ↙ Revenu (+)
+                            </button>
+                        </div>
+                        <input type="hidden" id="type" value="depense">
+                    </div>
+
+                    <div class="field-group">
+                        <label for="description">Description</label>
+                        <input
+                            type="text"
+                            id="description"
+                            placeholder="Ex. : Déjeuner, Facture d'électricité"
+                            required
+                        >
+                    </div>
+
+                    <div class="field-group">
+                        <label for="amount">Montant (<span id="amount-currency-label">HTG</span>)</label>
+                        <input
+                            type="number"
+                            id="amount"
+                            placeholder="0.00"
+                            step="0.01"
+                            min="0.01"
+                            required
+                        >
+                    </div>
+
+                    <div class="field-group">
+                        <label for="categorie">Catégorie</label>
+                        <select id="categorie">
+                            <option value="Nourriture">🍲 Nourriture</option>
+                            <option value="Transport">🚌 Transport</option>
+                            <option value="Loisirs">🎉 Loisirs</option>
+                            <option value="Santé">🏥 Santé</option>
+                            <option value="Business">📈 Business</option>
+                            <option value="Salaire">💼 Salaire</option>
+                            <option value="Autre">📌 Autre</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label for="date">Date</label>
+                        <input type="date" id="date" required>
+                    </div>
+
+                    <button type="submit" class="btn-primary-submit">
+                        ✓ Enregistrer la Transaction
+                    </button>
+                </form>
+            </section>
+
+            <!-- Graphiques d'analyse -->
+            <section class="charts-grid" aria-label="Analyses visuelles">
+                <article class="panel chart-panel">
+                    <h2>Dépenses par Catégorie</h2>
+                    <p class="panel-subtitle">Où va votre argent</p>
+                    <div class="chart-wrapper">
+                        <canvas id="category-chart"></canvas>
+                    </div>
+                </article>
+
+                <article class="panel chart-panel">
+                    <h2>Revenus vs Dépenses</h2>
+                    <p class="panel-subtitle">Bilan général des entrées et sorties</p>
+                    <div class="chart-wrapper">
+                        <canvas id="comparison-chart"></canvas>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Historique filtrable et tableau -->
+            <section class="panel history-panel" aria-labelledby="history-title">
+                <div class="history-top">
+                    <div>
+                        <h2 id="history-title">Historique des Transactions</h2>
+                        <p class="panel-subtitle">Tous vos mouvements d'argent enregistrés</p>
+                    </div>
+                </div>
+
+                <div class="filters-stack">
+                    <input
+                        type="search"
+                        id="search-input"
+                        class="search-input"
+                        placeholder="🔍 Rechercher une description..."
+                        aria-label="Rechercher une description"
+                    >
+
+                    <div class="filter-selects">
+                        <select id="type-filter" aria-label="Filtrer par type">
+                            <option value="all">Tous les Types</option>
+                            <option value="revenu">Revenus (+)</option>
+                            <option value="depense">Dépenses (-)</option>
+                        </select>
+
+                        <select id="category-filter" aria-label="Filtrer par catégorie">
+                            <option value="all">Toutes les Catégories</option>
+                            <option value="Nourriture">Nourriture</option>
+                            <option value="Transport">Transport</option>
+                            <option value="Loisirs">Loisirs</option>
+                            <option value="Santé">Santé</option>
+                            <option value="Business">Business</option>
+                            <option value="Salaire">Salaire</option>
+                            <option value="Autre">Autre</option>
+                        </select>
+                    </div>
+
+                    <button type="button" id="load-sample-btn" class="btn-secondary-sample">
+                        ↻ Données d'exemple
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>DATE</th>
+                                <th>DESCRIPTION</th>
+                                <th>CATÉGORIE</th>
+                                <th>TYPE</th>
+                                <th>MONTANT</th>
+                                <th>ACTION</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-list"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <p>© 2026 CashLife — Application de Suivi de Budget.</p>
+            <p>Vos données sont enregistrées automatiquement dans votre navigateur (LocalStorage).</p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch((err) => {
+                    console.log('Service Worker non actif :', err);
+                });
+            });
+        }
+    </script>
+</body>
+</html>
+
